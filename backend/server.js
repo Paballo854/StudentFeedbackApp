@@ -1,5 +1,5 @@
 ﻿const express = require('express');
-const { Pool } = require('pg'); // Changed from sqlite3 to pg for PostgreSQL
+const { Pool } = require('pg'); // Using 'pg' for PostgreSQL
 const cors = require('cors');
 const path = require('path');
 require('dotenv').config();
@@ -12,7 +12,7 @@ app.use(cors());
 app.use(express.json());
 
 // Database setup (PostgreSQL)
-// Uses DATABASE_URL from Render environment variables (which you just set)
+// Uses DATABASE_URL environment variable set on Render dashboard
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   // SSL is required for Render Postgres connection
@@ -25,17 +25,17 @@ const pool = new Pool({
 pool.connect()
   .then(client => {
     console.log('Connected to PostgreSQL database.');
-    // SQL to create the table (using PostgreSQL syntax)
+    // Cleaned-up SQL to create the table (fixes the syntax error)
     const createTableQuery = `
-      CREATE TABLE IF NOT EXISTS feedback (
-        id SERIAL PRIMARY KEY,
-        studentName VARCHAR(255) NOT NULL,
-        courseCode VARCHAR(255) NOT NULL,
-        comments TEXT NOT NULL,
-        rating INTEGER NOT NULL CHECK(rating >= 1 AND rating <= 5),
-        createdAt TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-      );
-    `;
+CREATE TABLE IF NOT EXISTS feedback (
+id SERIAL PRIMARY KEY,
+studentName VARCHAR(255) NOT NULL,
+courseCode VARCHAR(255) NOT NULL,
+comments TEXT NOT NULL,
+rating INTEGER NOT NULL CHECK(rating >= 1 AND rating <= 5),
+createdAt TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+`;
     return client.query(createTableQuery).finally(() => client.release());
   })
   .catch(err => {
@@ -50,7 +50,7 @@ app.get('/api/feedback', async (req, res) => {
     const result = await pool.query(sql); // Use pool.query for PostgreSQL
     res.json({
       message: 'success',
-      data: result.rows // PostgreSQL returns results in rows property
+      data: result.rows 
     });
   } catch (err) {
     console.error(err.stack);
